@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel — Barbería Don Pepe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#1a1410;--cream:#f5f0e8;--warm:#e8dfc8;--gold:#c9963a;--gold-light:#e8b84b;
+    --muted:#7a6e62;--border:#d4c9b4;--white:#fdfaf4;--success:#2d6a4f;--error:#8b1a1a;
+    --pending:#7a4f1a;--r:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;font-size:15px}
+
+  /* ── LOGIN ── */
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .login-box{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:40px 32px;width:100%;max-width:360px;text-align:center}
+  .login-logo{font-size:36px;margin-bottom:12px}
+  .login-title{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:4px}
+  .login-sub{font-size:12px;color:var(--muted);margin-bottom:28px}
+  .login-field{text-align:left;margin-bottom:16px}
+  .login-field label{display:block;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+  .login-field input{width:100%;border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--white);outline:none;transition:border-color .15s}
+  .login-field input:focus{border-color:var(--gold)}
+  .login-error{font-size:12px;color:var(--error);margin-bottom:12px;display:none}
+
+  /* ── HEADER PANEL ── */
+  .panel-header{background:var(--ink);color:var(--cream);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+  .panel-header-left{display:flex;align-items:center;gap:12px}
+  .panel-badge{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(201,150,58,.35);padding:3px 10px;border-radius:20px}
+  .panel-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--white)}
+  .btn-logout{background:transparent;border:1px solid rgba(245,240,232,.2);color:rgba(245,240,232,.7);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all .15s}
+  .btn-logout:hover{border-color:rgba(245,240,232,.5);color:var(--cream)}
+
+  /* ── MAIN ── */
+  .panel-main{max-width:700px;margin:0 auto;padding:20px 16px 60px}
+
+  /* ── VISTA TABS ── */
+  .view-tabs{display:flex;gap:4px;background:var(--warm);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:20px}
+  .view-tab{flex:1;padding:9px 6px;border:none;border-radius:7px;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;text-align:center}
+  .view-tab.active{background:var(--white);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+  /* ── FECHA NAVEGACIÓN ── */
+  .date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .date-nav button{background:none;border:1px solid var(--border);border-radius:var(--r);width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .date-nav button:hover{border-color:var(--gold);color:var(--gold)}
+  .date-label{font-family:'Playfair Display',serif;font-size:16px;color:var(--ink);text-align:center;flex:1}
+  .btn-hoy{font-size:11px;font-weight:500;padding:4px 12px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+  .btn-hoy:hover{border-color:var(--gold);color:var(--gold)}
+
+  /* ── STATS ── */
+  .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+  .stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center}
+  .stat-num{font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);line-height:1}
+  .stat-label{font-size:11px;color:var(--muted);margin-top:4px;font-weight:300}
+
+  /* ── SECCIÓN PENDIENTES DIANA ── */
+  .diana-banner{background:rgba(201,150,58,.08);border:1px solid rgba(201,150,58,.3);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;display:none}
+  .diana-banner-title{font-size:12px;font-weight:600;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+  .diana-item{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .diana-item:last-child{margin-bottom:0}
+  .diana-info{font-size:13px}
+  .diana-name{font-weight:500;color:var(--ink)}
+  .diana-tel{color:var(--muted);font-size:12px}
+  .btn-confirmar-diana{font-size:11px;font-weight:600;padding:5px 12px;border:none;border-radius:20px;background:var(--gold);color:var(--white);cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .15s}
+  .btn-confirmar-diana:hover{background:var(--gold-light);color:var(--ink)}
+
+  /* ── LISTA DE CITAS ── */
+  .citas-section-title{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .citas-section-title span{flex:1;height:1px;background:var(--border)}
+  .cita-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px;transition:all .2s}
+  .cita-card.completada{opacity:.5}
+  .cita-card.cancelada{opacity:.4;text-decoration-color:var(--muted)}
+  .cita-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+  .cita-hora{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);line-height:1;white-space:nowrap}
+  .cita-estado{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:20px}
+  .estado-confirmada{background:rgba(45,106,79,.1);color:var(--success)}
+  .estado-completada{background:rgba(45,106,79,.2);color:var(--success)}
+  .estado-cancelada{background:rgba(139,26,26,.1);color:var(--error)}
+  .estado-reagendada{background:rgba(201,150,58,.12);color:var(--gold)}
+  .estado-pendiente{background:rgba(122,79,26,.1);color:var(--pending)}
+  .cita-nombre{font-size:15px;font-weight:500;color:var(--ink);margin-bottom:2px}
+  .cita-detalle{font-size:12px;color:var(--muted);line-height:1.6}
+  .cita-estilista{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;background:var(--warm);color:var(--ink);margin-top:6px}
+  .cita-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .btn-action{font-size:12px;font-weight:500;padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--ink);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+  .btn-action:hover{border-color:var(--gold);color:var(--gold)}
+  .btn-action.completar{border-color:var(--success);color:var(--success)}
+  .btn-action.completar:hover{background:var(--success);color:white}
+  .btn-action.cancelar{border-color:rgba(139,26,26,.3);color:var(--error)}
+  .btn-action.cancelar:hover{background:var(--error);color:white}
+
+  /* ── SEMANA GRID ── */
+  .semana-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px}
+  .semana-dia{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:8px 4px;text-align:center;cursor:pointer;transition:all .15s;min-height:70px}
+  .semana-dia:hover{border-color:var(--gold)}
+  .semana-dia.activo{border-color:var(--gold);background:rgba(201,150,58,.06)}
+  .semana-dia.hoy .dia-num{color:var(--gold);font-weight:700}
+  .semana-dia.domingo{opacity:.4;cursor:default;pointer-events:none}
+  .dia-nom{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .dia-num{font-size:18px;font-family:'Playfair Display',serif;color:var(--ink);line-height:1.2}
+  .dia-count{font-size:10px;color:var(--gold);font-weight:600;margin-top:2px}
+
+  /* ── MES ── */
+  .mes-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px}
+  .mes-dow{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;text-align:center;padding:4px 0;letter-spacing:.04em}
+  .mes-dia{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:6px 4px;text-align:center;cursor:pointer;transition:all .15s;min-height:52px}
+  .mes-dia:hover:not(.mes-vacio):not(.mes-domingo){border-color:var(--gold)}
+  .mes-dia.mes-activo{border-color:var(--gold);background:rgba(201,150,58,.06)}
+  .mes-dia.mes-hoy .mes-dia-num{color:var(--gold);font-weight:700}
+  .mes-dia.mes-vacio,.mes-dia.mes-domingo{opacity:.3;cursor:default;pointer-events:none}
+  .mes-dia-num{font-size:13px;color:var(--ink);line-height:1.4}
+  .mes-dia-count{font-size:10px;color:var(--gold);font-weight:600}
+
+  /* ── BLOQUEAR HORARIO ── */
+  .bloquear-section{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px}
+  .bloquear-title{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .bloquear-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  .bloquear-form select,.bloquear-form input[type=date]{border:1.5px solid var(--border);border-radius:var(--r);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--white);outline:none;transition:border-color .15s;flex:1;min-width:120px}
+  .bloquear-form select:focus,.bloquear-form input:focus{border-color:var(--gold)}
+
+  /* ── EMPTY STATE ── */
+  .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+  .empty-icon{font-size:36px;margin-bottom:12px}
+  .empty-text{font-size:14px}
+
+  /* ── BTNS ── */
+  .btn{width:100%;padding:13px;border-radius:var(--r);border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .18s}
+  .btn-primary{background:var(--ink);color:var(--cream)}
+  .btn-primary:hover{background:#2d2520}
+  .btn-primary:disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
+  .btn-sm{width:auto;padding:9px 20px}
+  .btn-gold-sm{background:var(--gold);color:var(--white);border:none;border-radius:var(--r);padding:9px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+  .btn-gold-sm:hover{background:var(--gold-light);color:var(--ink)}
+
+  /* ── TOAST ── */
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--cream);padding:12px 20px;border-radius:30px;font-size:13px;font-weight:500;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:200;white-space:nowrap;pointer-events:none}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  #toast.error{background:var(--error)}
+
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════
+     PANTALLA DE LOGIN
+═══════════════════════════════════ -->
+<div id="screen-login" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">✂️</div>
+    <div class="login-title">Panel de gestión</div>
+    <div class="login-sub">Barbería Don Pepe</div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="inp-password" placeholder="••••••••••">
+    </div>
+    <div class="login-error" id="login-error">Contraseña incorrecta. Intenta de nuevo.</div>
+    <button class="btn btn-primary" id="btn-login">Entrar al panel</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     PANEL PRINCIPAL
+═══════════════════════════════════ -->
+<div id="screen-panel" class="hidden">
+
+  <div class="panel-header">
+    <div class="panel-header-left">
+      <div class="panel-badge">Panel</div>
+      <div class="panel-title" id="panel-negocio-nombre">Barbería Don Pepe</div>
+    </div>
+    <button class="btn-logout" id="btn-logout">Cerrar sesión</button>
+  </div>
+
+  <div class="panel-main">
+
+    <!-- Solicitudes pendientes de Diana -->
+    <div class="diana-banner" id="diana-banner">
+      <div class="diana-banner-title">🎨 Solicitudes de tinte pendientes</div>
+      <div id="diana-lista"></div>
+    </div>
+
+    <!-- Tabs de vista -->
+    <div class="view-tabs">
+      <button class="view-tab active" id="tab-hoy">Hoy</button>
+      <button class="view-tab" id="tab-semana">Semana</button>
+      <button class="view-tab" id="tab-mes">Mes</button>
+    </div>
+
+    <!-- Navegación de fecha -->
+    <div class="date-nav">
+      <button id="nav-prev">‹</button>
+      <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:center">
+        <span class="date-label" id="date-label"></span>
+        <button class="btn-hoy" id="btn-hoy-nav">Hoy</button>
+      </div>
+      <button id="nav-next">›</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">—</div>
+        <div class="stat-label">Total citas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-confirmadas">—</div>
+        <div class="stat-label">Confirmadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-completadas">—</div>
+        <div class="stat-label">Completadas</div>
+      </div>
+    </div>
+
+    <!-- Vista semana (grid de días) -->
+    <div id="semana-grid-wrap" class="hidden">
+      <div class="semana-grid" id="semana-grid"></div>
+    </div>
+
+    <!-- Vista mes (grid tipo calendario) -->
+    <div id="mes-grid-wrap" class="hidden">
+      <div class="mes-grid" id="mes-grid">
+        <div class="mes-dow">Lu</div><div class="mes-dow">Ma</div><div class="mes-dow">Mi</div>
+        <div class="mes-dow">Ju</div><div class="mes-dow">Vi</div><div class="mes-dow">Sá</div><div class="mes-dow">Do</div>
+      </div>
+    </div>
+
+    <!-- Lista de citas -->
+    <div id="citas-wrap">
+      <div class="citas-section-title" id="citas-section-label">
+        Citas <span></span>
+      </div>
+      <div id="citas-lista"></div>
+    </div>
+
+    <!-- Bloquear horarios -->
+    <div class="bloquear-section">
+      <div class="bloquear-title">🔒 Bloquear horario</div>
+      <div class="bloquear-form">
+        <input type="date" id="bloquear-fecha">
+        <select id="bloquear-hora">
+          <option value="">Selecciona hora…</option>
+          <option>11:00</option><option>11:30</option><option>12:00</option><option>12:30</option>
+          <option>13:00</option><option>13:30</option><option>14:00</option><option>14:30</option>
+          <option>15:00</option><option>15:30</option><option>16:00</option><option>16:30</option>
+          <option>17:00</option><option>17:30</option><option>18:00</option><option>18:30</option>
+          <option value="dia-completo">— Día completo —</option>
+        </select>
+        <button class="btn-gold-sm" id="btn-bloquear">Bloquear</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function() {
+  // ══════════════════════════════════════════
+  //  CONFIG
+  // ══════════════════════════════════════════
+  const SUPABASE_URL = 'https://hhfjivzmglxzboajhksx.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoZmppdnptZ2x4emJvYWpoa3N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzcxODMsImV4cCI6MjA4OTYxMzE4M30.SD0fpbqmHNlTt4BunX2sbotzwWCqJ70TP_Gd-4WOsnU';
+  const NEGOCIO_SLUG = 'donpepe';
+
+  const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const DIAS_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const DIAS_CORTO = ['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
+
+  // ── Estado
+  const st = {
+    negocioId: null,
+    vista: 'hoy', // 'hoy' | 'semana' | 'mes'
+    cursor: new Date(), // fecha de referencia para navegación
+    diaSeleccionado: null, // para semana/mes al hacer clic en un día
+    citas: [],
+  };
+  st.cursor.setHours(0,0,0,0);
+
+  // ── Mini cliente Supabase
+  const sb = {
+    h: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+    async get(table, qs) {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + qs, { headers: this.h });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    },
+    async patch(table, id, body) {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + id, {
+        method: 'PATCH', headers: { ...this.h, Prefer: 'return=representation' }, body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    },
+    async post(table, body) {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
+        method: 'POST', headers: { ...this.h, Prefer: 'return=representation' }, body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    },
+    async del(table, qs) {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + qs, {
+        method: 'DELETE', headers: this.h
+      });
+      return r.ok;
+    }
+  };
+
+  // ── Utils
+  const $ = id => document.getElementById(id);
+  const fmtDate = d => {
+    const dt = typeof d === 'string' ? new Date(d + 'T12:00:00') : d;
+    return DIAS_ES[dt.getDay()] + ' ' + dt.getDate() + ' de ' + MESES_ES[dt.getMonth()];
+  };
+  const toDateStr = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+
+  function showToast(msg, isError) {
+    const t = $('toast'); t.textContent = msg;
+    t.className = 'show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = '', 3200);
+  }
+
+  function estadoClass(e) {
+    const map = { 'Confirmada':'confirmada','Completada':'completada','Cancelada':'cancelada','Reagendada':'reagendada','Pendiente cotización':'pendiente' };
+    return 'estado-' + (map[e] || 'confirmada');
+  }
+
+  // ══════════════════════════════════════════
+  //  LOGIN
+  // ══════════════════════════════════════════
+  async function login() {
+    const pass = $('inp-password').value.trim();
+    if (!pass) return;
+    $('btn-login').disabled = true; $('btn-login').textContent = 'Verificando…';
+    try {
+      const rows = await sb.get('negocios', 'slug=eq.' + NEGOCIO_SLUG + '&select=id,nombre,password,activo');
+      if (!rows.length || !rows[0].activo) { showError('Negocio no disponible.'); return; }
+      if (rows[0].password !== pass) { showError('Contraseña incorrecta. Intenta de nuevo.'); return; }
+      st.negocioId = rows[0].id;
+      $('panel-negocio-nombre').textContent = rows[0].nombre;
+      $('screen-login').classList.add('hidden');
+      $('screen-panel').classList.remove('hidden');
+      cargarTodo();
+    } catch(e) { showError('Error de conexión.'); }
+    $('btn-login').disabled = false; $('btn-login').textContent = 'Entrar al panel';
+  }
+
+  function showError(msg) { $('login-error').textContent = msg; $('login-error').style.display = 'block'; }
+
+  // ══════════════════════════════════════════
+  //  CARGA PRINCIPAL
+  // ══════════════════════════════════════════
+  async function cargarTodo() {
+    await Promise.all([cargarPendientesDiana(), cargarVista()]);
+  }
+
+  async function cargarPendientesDiana() {
+    try {
+      const rows = await sb.get('citas',
+        'negocio_id=eq.' + st.negocioId +
+        '&estado=eq.Pendiente cotización' +
+        '&select=id,nombre_cliente,telefono,created_at' +
+        '&order=created_at.asc');
+      const banner = $('diana-banner');
+      if (!rows.length) { banner.style.display = 'none'; return; }
+      banner.style.display = 'block';
+      $('diana-lista').innerHTML = rows.map(r => `
+        <div class="diana-item" id="di-${r.id}">
+          <div class="diana-info">
+            <div class="diana-name">${r.nombre_cliente}</div>
+            <div class="diana-tel">📱 ${r.telefono}</div>
+          </div>
+          <button class="btn-confirmar-diana" data-id="${r.id}">Contactado ✓</button>
+        </div>`).join('');
+      document.querySelectorAll('.btn-confirmar-diana').forEach(btn => {
+        btn.addEventListener('click', () => marcarContactado(btn.dataset.id));
+      });
+    } catch(e) {}
+  }
+
+  async function marcarContactado(id) {
+    try {
+      await sb.patch('citas', id, { estado: 'Confirmada' });
+      const el = $('di-' + id);
+      if (el) el.remove();
+      const lista = $('diana-lista');
+      if (!lista.children.length) $('diana-banner').style.display = 'none';
+      showToast('Marcado como contactado ✓');
+    } catch(e) { showToast('Error al actualizar', true); }
+  }
+
+  // ══════════════════════════════════════════
+  //  VISTAS
+  // ══════════════════════════════════════════
+  async function cargarVista() {
+    $('semana-grid-wrap').classList.add('hidden');
+    $('mes-grid-wrap').classList.add('hidden');
+
+    if (st.vista === 'hoy') {
+      await cargarHoy();
+    } else if (st.vista === 'semana') {
+      await cargarSemana();
+    } else {
+      await cargarMes();
+    }
+  }
+
+  // ── HOY ──
+  async function cargarHoy() {
+    const ds = toDateStr(st.cursor);
+    $('date-label').textContent = fmtDate(st.cursor);
+    const citas = await fetchCitasFecha(ds, ds);
+    st.citas = citas;
+    actualizarStats(citas);
+    renderListaCitas(citas, 'Citas del día');
+  }
+
+  // ── SEMANA ──
+  async function cargarSemana() {
+    $('semana-grid-wrap').classList.remove('hidden');
+    const lunes = getLunes(st.cursor);
+    const sabado = new Date(lunes); sabado.setDate(lunes.getDate() + 5);
+    const lunesStr = toDateStr(lunes);
+    const sabStr = toDateStr(sabado);
+    $('date-label').textContent = lunesStr.slice(8) + ' – ' + sabStr.slice(8) + ' ' + MESES_CORTO[sabado.getMonth()];
+
+    const citas = await fetchCitasFecha(lunesStr, sabStr);
+    st.citas = citas;
+    actualizarStats(citas);
+
+    // Renderizar grid de días
+    const grid = $('semana-grid'); grid.innerHTML = '';
+    const hoyStr = toDateStr(new Date());
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(lunes); d.setDate(lunes.getDate() + i);
+      const ds = toDateStr(d);
+      const cnt = citas.filter(c => c.fecha === ds && c.estado !== 'Cancelada').length;
+      const isHoy = ds === hoyStr;
+      const isActivo = st.diaSeleccionado === ds;
+      const div = document.createElement('div');
+      div.className = 'semana-dia' + (isHoy ? ' hoy' : '') + (isActivo ? ' activo' : '');
+      div.innerHTML = `<div class="dia-nom">${DIAS_CORTO[d.getDay()]}</div>
+        <div class="dia-num">${d.getDate()}</div>
+        <div class="dia-count">${cnt > 0 ? cnt + ' cita' + (cnt > 1 ? 's' : '') : ''}</div>`;
+      div.addEventListener('click', () => seleccionarDiaSemana(ds, div));
+      grid.appendChild(div);
+    }
+
+    // Mostrar citas del día seleccionado o todos
+    if (st.diaSeleccionado) {
+      const citasDia = citas.filter(c => c.fecha === st.diaSeleccionado);
+      renderListaCitas(citasDia, fmtDate(st.diaSeleccionado));
+    } else {
+      renderListaCitas(citas, 'Citas de la semana');
+    }
+  }
+
+  function seleccionarDiaSemana(ds, div) {
+    document.querySelectorAll('.semana-dia').forEach(d => d.classList.remove('activo'));
+    if (st.diaSeleccionado === ds) {
+      st.diaSeleccionado = null;
+      renderListaCitas(st.citas, 'Citas de la semana');
+    } else {
+      st.diaSeleccionado = ds;
+      div.classList.add('activo');
+      const citasDia = st.citas.filter(c => c.fecha === ds);
+      renderListaCitas(citasDia, fmtDate(ds));
+    }
+  }
+
+  // ── MES ──
+  async function cargarMes() {
+    $('mes-grid-wrap').classList.remove('hidden');
+    const year = st.cursor.getFullYear();
+    const month = st.cursor.getMonth();
+    $('date-label').textContent = MESES_ES[month].charAt(0).toUpperCase() + MESES_ES[month].slice(1) + ' ' + year;
+
+    const inicio = toDateStr(new Date(year, month, 1));
+    const fin = toDateStr(new Date(year, month + 1, 0));
+    const citas = await fetchCitasFecha(inicio, fin);
+    st.citas = citas;
+    actualizarStats(citas);
+
+    // Conteo por día
+    const countPorDia = {};
+    citas.forEach(c => { if (c.estado !== 'Cancelada') countPorDia[c.fecha] = (countPorDia[c.fecha] || 0) + 1; });
+
+    // Renderizar
+    const grid = $('mes-grid');
+    while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+    const hoyStr = toDateStr(new Date());
+    const firstDow = (new Date(year, month, 1).getDay() || 7) - 1;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let i = 0; i < firstDow; i++) {
+      const el = document.createElement('div'); el.className = 'mes-dia mes-vacio'; grid.appendChild(el);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dt = new Date(year, month, d);
+      const ds = toDateStr(dt);
+      const dow = dt.getDay();
+      const cnt = countPorDia[ds] || 0;
+      const isHoy = ds === hoyStr;
+      const isActivo = st.diaSeleccionado === ds;
+      const el = document.createElement('div');
+      el.className = 'mes-dia' + (dow === 0 ? ' mes-domingo' : '') + (isHoy ? ' mes-hoy' : '') + (isActivo ? ' mes-activo' : '');
+      el.innerHTML = `<div class="mes-dia-num">${d}</div><div class="mes-dia-count">${cnt > 0 ? cnt : ''}</div>`;
+      if (dow !== 0) {
+        el.addEventListener('click', () => seleccionarDiaMes(ds, el));
+      }
+      grid.appendChild(el);
+    }
+
+    if (st.diaSeleccionado) {
+      const citasDia = citas.filter(c => c.fecha === st.diaSeleccionado);
+      renderListaCitas(citasDia, fmtDate(st.diaSeleccionado));
+    } else {
+      renderListaCitas(citas, 'Citas del mes');
+    }
+  }
+
+  function seleccionarDiaMes(ds, el) {
+    document.querySelectorAll('.mes-dia').forEach(d => d.classList.remove('mes-activo'));
+    if (st.diaSeleccionado === ds) {
+      st.diaSeleccionado = null;
+      renderListaCitas(st.citas, 'Citas del mes');
+    } else {
+      st.diaSeleccionado = ds;
+      el.classList.add('mes-activo');
+      const citasDia = st.citas.filter(c => c.fecha === ds);
+      renderListaCitas(citasDia, fmtDate(ds));
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  FETCH Y RENDER
+  // ══════════════════════════════════════════
+  async function fetchCitasFecha(desde, hasta) {
+    try {
+      return await sb.get('citas',
+        'negocio_id=eq.' + st.negocioId +
+        '&fecha=gte.' + desde +
+        '&fecha=lte.' + hasta +
+        '&order=fecha.asc,hora.asc' +
+        '&select=id,nombre_cliente,telefono,servicio,estilista,fecha,hora,estado,notas');
+    } catch(e) { showToast('Error cargando citas', true); return []; }
+  }
+
+  function actualizarStats(citas) {
+    const activas = citas.filter(c => c.estado !== 'Cancelada');
+    const completadas = citas.filter(c => c.estado === 'Completada');
+    const confirmadas = citas.filter(c => c.estado === 'Confirmada' || c.estado === 'Reagendada');
+    $('stat-total').textContent = activas.length;
+    $('stat-confirmadas').textContent = confirmadas.length;
+    $('stat-completadas').textContent = completadas.length;
+  }
+
+  function renderListaCitas(citas, titulo) {
+    $('citas-section-label').innerHTML = titulo + ' <span></span>';
+    const lista = $('citas-lista');
+    if (!citas.length) {
+      lista.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Sin citas para este período</div></div>';
+      return;
+    }
+    // Agrupar por fecha si son múltiples días
+    const porFecha = {};
+    citas.forEach(c => { if (!porFecha[c.fecha]) porFecha[c.fecha] = []; porFecha[c.fecha].push(c); });
+    lista.innerHTML = '';
+    Object.entries(porFecha).forEach(([fecha, items]) => {
+      if (Object.keys(porFecha).length > 1) {
+        const sep = document.createElement('div');
+        sep.className = 'citas-section-title';
+        sep.style.margin = '16px 0 8px';
+        sep.innerHTML = fmtDate(fecha) + ' <span></span>';
+        lista.appendChild(sep);
+      }
+      items.forEach(c => lista.appendChild(buildCitaCard(c)));
+    });
+  }
+
+  function buildCitaCard(c) {
+    const div = document.createElement('div');
+    div.className = 'cita-card' + (c.estado === 'Completada' ? ' completada' : c.estado === 'Cancelada' ? ' cancelada' : '');
+    div.id = 'card-' + c.id;
+    const hora = c.hora ? c.hora.slice(0,5) : '—';
+    const cancelada = c.estado === 'Cancelada';
+    const completada = c.estado === 'Completada';
+    div.innerHTML = `
+      <div class="cita-top">
+        <div class="cita-hora">${hora}</div>
+        <span class="cita-estado ${estadoClass(c.estado)}">${c.estado}</span>
+      </div>
+      <div class="cita-nombre">${c.nombre_cliente}</div>
+      <div class="cita-detalle">
+        📱 ${c.telefono}${c.notas ? '<br>📝 ' + c.notas : ''}
+      </div>
+      <span class="cita-estilista">✂️ ${c.estilista} — ${c.servicio}</span>
+      ${!cancelada && !completada ? `
+      <div class="cita-actions">
+        <button class="btn-action completar" data-id="${c.id}">✓ Completada</button>
+        <button class="btn-action cancelar" data-id="${c.id}">✕ Cancelar</button>
+      </div>` : ''}`;
+
+    if (!cancelada && !completada) {
+      div.querySelector('.btn-action.completar').addEventListener('click', () => cambiarEstado(c.id, 'Completada'));
+      div.querySelector('.btn-action.cancelar').addEventListener('click', () => {
+        if (confirm('¿Cancelar la cita de ' + c.nombre_cliente + '?')) cambiarEstado(c.id, 'Cancelada');
+      });
+    }
+    return div;
+  }
+
+  async function cambiarEstado(id, nuevoEstado) {
+    try {
+      await sb.patch('citas', id, { estado: nuevoEstado });
+      showToast(nuevoEstado === 'Completada' ? 'Cita marcada como completada ✓' : 'Cita cancelada');
+      await cargarVista();
+    } catch(e) { showToast('Error al actualizar', true); }
+  }
+
+  // ══════════════════════════════════════════
+  //  BLOQUEAR HORARIOS
+  // ══════════════════════════════════════════
+  async function bloquearHorario() {
+    const fecha = $('bloquear-fecha').value;
+    const hora  = $('bloquear-hora').value;
+    if (!fecha || !hora) { showToast('Selecciona fecha y hora', true); return; }
+
+    const btn = $('btn-bloquear'); btn.disabled = true; btn.textContent = 'Bloqueando…';
+    try {
+      if (hora === 'dia-completo') {
+        const slots = ['11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30'];
+        for (const s of slots) {
+          await sb.post('horarios_bloqueados', { negocio_id: st.negocioId, fecha, hora: s + ':00', motivo: 'Día bloqueado' });
+        }
+        showToast('Día completo bloqueado ✓');
+      } else {
+        await sb.post('horarios_bloqueados', { negocio_id: st.negocioId, fecha, hora: hora + ':00', motivo: 'Horario bloqueado' });
+        showToast('Horario ' + hora + ' bloqueado ✓');
+      }
+      $('bloquear-fecha').value = ''; $('bloquear-hora').value = '';
+    } catch(e) { showToast('Error al bloquear', true); }
+    btn.disabled = false; btn.textContent = 'Bloquear';
+  }
+
+  // ══════════════════════════════════════════
+  //  NAVEGACIÓN DE FECHAS
+  // ══════════════════════════════════════════
+  function getLunes(d) {
+    const lunes = new Date(d);
+    const dow = lunes.getDay() || 7;
+    lunes.setDate(lunes.getDate() - dow + 1);
+    lunes.setHours(0,0,0,0);
+    return lunes;
+  }
+
+  function navAnterior() {
+    st.diaSeleccionado = null;
+    if (st.vista === 'hoy') st.cursor.setDate(st.cursor.getDate() - 1);
+    else if (st.vista === 'semana') st.cursor.setDate(st.cursor.getDate() - 7);
+    else { st.cursor.setDate(1); st.cursor.setMonth(st.cursor.getMonth() - 1); }
+    cargarVista();
+  }
+  function navSiguiente() {
+    st.diaSeleccionado = null;
+    if (st.vista === 'hoy') st.cursor.setDate(st.cursor.getDate() + 1);
+    else if (st.vista === 'semana') st.cursor.setDate(st.cursor.getDate() + 7);
+    else { st.cursor.setDate(1); st.cursor.setMonth(st.cursor.getMonth() + 1); }
+    cargarVista();
+  }
+  function irHoy() {
+    st.cursor = new Date(); st.cursor.setHours(0,0,0,0);
+    st.diaSeleccionado = null;
+    cargarVista();
+  }
+
+  function cambiarVista(vista) {
+    st.vista = vista; st.diaSeleccionado = null;
+    ['hoy','semana','mes'].forEach(v => {
+      $('tab-' + v).classList.toggle('active', v === vista);
+    });
+    // Resetear cursor a hoy si cambia de vista
+    st.cursor = new Date(); st.cursor.setHours(0,0,0,0);
+    cargarVista();
+  }
+
+  // ══════════════════════════════════════════
+  //  EVENT LISTENERS
+  // ══════════════════════════════════════════
+  $('btn-login').addEventListener('click', login);
+  $('inp-password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  $('btn-logout').addEventListener('click', () => {
+    $('screen-panel').classList.add('hidden');
+    $('screen-login').classList.remove('hidden');
+    $('inp-password').value = '';
+  });
+
+  $('tab-hoy').addEventListener('click',    () => cambiarVista('hoy'));
+  $('tab-semana').addEventListener('click', () => cambiarVista('semana'));
+  $('tab-mes').addEventListener('click',    () => cambiarVista('mes'));
+
+  $('nav-prev').addEventListener('click',    navAnterior);
+  $('nav-next').addEventListener('click',    navSiguiente);
+  $('btn-hoy-nav').addEventListener('click', irHoy);
+  $('btn-bloquear').addEventListener('click', bloquearHorario);
+
+  // Fecha mínima del input de bloqueo = hoy
+  const inputFecha = $('bloquear-fecha');
+  const hoyStr = toDateStr(new Date());
+  inputFecha.min = hoyStr;
+  inputFecha.value = hoyStr;
+
+})();
+</script>
+</body>
+</html>

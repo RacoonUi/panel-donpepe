@@ -495,7 +495,7 @@
   // ══════════════════════════════════════════
   const SUPABASE_URL = 'https://hhfjivzmglxzboajhksx.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoZmppdnptZ2x4emJvYWpoa3N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzcxODMsImV4cCI6MjA4OTYxMzE4M30.SD0fpbqmHNlTt4BunX2sbotzwWCqJ70TP_Gd-4WOsnU';
-  const NEGOCIO_SLUG = 'corteflow';
+  const NEGOCIO_SLUG = 'donpepe';
 
   const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -1113,13 +1113,18 @@
       const ds  = toDateStr(dt);
       const dow = dt.getDay();
       const past = ds < hoyStr;
+      // Sábado de hoy pasado el horario (después de 14:30) → también bloqueado
+      const esSabadoSinSlots = ds === hoyStr && dow === 6 && getSlotsParaFecha(ds).length === 0;
+      const noDisponible = dow === 0 || past || esSabadoSinSlots;
       const div = document.createElement('div');
-      div.className = 'dia-check' + (dow === 0 ? ' dia-domingo' : '') + (past ? ' dia-domingo' : '');
+      div.className = 'dia-check' + (noDisponible ? ' dia-domingo' : '');
       div.innerHTML = '<div class="dia-check-nom">' + ['Do','Lu','Ma','Mi','Ju','Vi','Sá'][dow] + '</div><div class="dia-check-num">' + d + '</div>';
-      if (dow !== 0 && !past) {
+      if (!noDisponible) {
         div.addEventListener('click', () => {
           if (diasSeleccionados.has(ds)) { diasSeleccionados.delete(ds); div.classList.remove('selected'); }
           else { diasSeleccionados.add(ds); div.classList.add('selected'); }
+          selTodoActivado = false;
+          $('btn-sel-todo-dias').textContent = 'Seleccionar semana completa';
           $('btn-bloquear-dias').disabled = diasSeleccionados.size === 0;
           $('dias-hint').textContent = diasSeleccionados.size > 0
             ? diasSeleccionados.size + ' día(s) seleccionado(s)'
@@ -1153,7 +1158,7 @@
       showToast(horariosSeleccionados.size + ' horario(s) bloqueado(s) ✓');
       $('bloquear-fecha').value = '';
       renderHorariosGrid();
-    } catch(e) { showToast('Error al bloquear', true); }
+    } catch(e) { showToast('Error al bloquear: ' + (e.message || e), true); console.error('Bloquear error:', e); }
     btn.disabled = true; btn.textContent = 'Bloquear seleccionados';
   }
 
@@ -1171,7 +1176,7 @@
       showToast(diasSeleccionados.size + ' día(s) bloqueado(s) ✓');
       diasSeleccionados.clear();
       renderDiasGrid();
-    } catch(e) { showToast('Error al bloquear días', true); }
+    } catch(e) { showToast('Error al bloquear: ' + (e.message || e), true); console.error('Bloquear días error:', e); }
     btn.disabled = true; btn.textContent = 'Bloquear días seleccionados';
   }
 
@@ -1231,7 +1236,6 @@
   $('nav-prev').addEventListener('click',    navAnterior);
   $('nav-next').addEventListener('click',    navSiguiente);
   $('btn-hoy-nav').addEventListener('click', irHoy);
-  $('btn-bloquear').addEventListener('click', bloquearHorario);
 
   // ══════════════════════════════════════════
   //  MODAL EDITAR / NUEVA CITA (compartido)
@@ -1493,32 +1497,113 @@
   });
   $('btn-modal-confirmar').addEventListener('click', confirmarCitaDiana);
 
-  // ── VERIFICAR SESIÓN GUARDADA AL ARRANCAR
+  // ══════════════════════════════════════════
+  //  INIT FINAL
+  // ══════════════════════════════════════════
+
+  // Sesión guardada
   const sesionGuardada = cargarSesion();
   if (sesionGuardada) {
     entrarAlPanel(sesionGuardada.negocioId, sesionGuardada.nombre);
   }
 
-  // Fecha mínima del input de bloqueo = hoy
+  // ── Bloquear tabs
+  $('btab-horarios').addEventListener('click', () => {
+    $('btab-horarios').classList.add('active');
+    $('btab-dias').classList.remove('active');
+    $('bview-horarios').style.display = 'block';
+    $('bview-dias').style.display = 'none';
+  });
+  $('btab-dias').addEventListener('click', () => {
+    $('btab-dias').classList.add('active');
+    $('btab-horarios').classList.remove('active');
+    $('bview-dias').style.display = 'block';
+    $('bview-horarios').style.display = 'none';
+    poblarSelectMes();
+    renderDiasGrid();
+  });
+
+  // ── Bloquear por horario
   const inputFecha = $('bloquear-fecha');
   const hoyStr = toDateStr(new Date());
   inputFecha.min = hoyStr;
   inputFecha.value = hoyStr;
-
-  // Cuando cambia la fecha de bloqueo: validar domingo y actualizar horas
   inputFecha.addEventListener('change', () => {
-    const fecha = inputFecha.value;
-    if (esDomingo(fecha)) {
-      showToast('Los domingos estamos cerrados.', true);
-      inputFecha.value = '';
-      poblarSelectHoras('bloquear-hora', '');
-      return;
-    }
-    poblarSelectHoras('bloquear-hora', fecha);
+    horariosSeleccionados.clear();
+    renderHorariosGrid();
+  });
+  renderHorariosGrid();
+
+  $('btn-bloquear').addEventListener('click', bloquearHorario);
+
+  $('btn-sel-todo-horarios').addEventListener('click', () => {
+    document.querySelectorAll('#horarios-grid input[type=checkbox]').forEach(cb => {
+      cb.checked = true;
+      cb.closest('label').classList.add('selected');
+      horariosSeleccionados.add(cb.value);
+    });
+    $('btn-bloquear').disabled = horariosSeleccionados.size === 0;
+    $('horarios-hint').textContent = horariosSeleccionados.size + ' horario(s) seleccionado(s)';
   });
 
-  // Poblar horas iniciales para hoy
-  poblarSelectHoras('bloquear-hora', hoyStr);
+  // ── Bloquear por días
+  $('btn-bloquear-dias').addEventListener('click', bloquearDias);
+
+  let selTodoActivado = false;
+  $('btn-sel-todo-dias').addEventListener('click', () => {
+    if (selTodoActivado) {
+      // Deseleccionar todos
+      diasSeleccionados.clear();
+      document.querySelectorAll('#dias-grid .dia-check').forEach(d => d.classList.remove('selected'));
+      $('btn-sel-todo-dias').textContent = 'Seleccionar semana completa';
+      $('btn-bloquear-dias').disabled = true;
+      $('dias-hint').textContent = 'Selecciona los días a bloquear';
+      selTodoActivado = false;
+      return;
+    }
+    // Seleccionar solo la semana actual (lunes a sábado) dentro del mes visible
+    // Buscar la semana que contiene hoy, o la primera semana futura del mes
+    const year  = bloquearMesCursor.getFullYear();
+    const month = bloquearMesCursor.getMonth();
+    const hoyDate = new Date(); hoyDate.setHours(0,0,0,0);
+    // Obtener el lunes de la semana actual o siguiente disponible en el mes
+    const lunes = new Date(hoyDate);
+    const dowHoy = hoyDate.getDay() || 7;
+    lunes.setDate(hoyDate.getDate() - dowHoy + 1); // lunes de esta semana
+    // Si el lunes ya pasó completamente, ir a la próxima semana
+    const sabadoSemana = new Date(lunes); sabadoSemana.setDate(lunes.getDate() + 5);
+    const semanaTarget = sabadoSemana < hoyDate
+      ? new Date(lunes.setDate(lunes.getDate() + 7)) && lunes
+      : lunes;
+
+    document.querySelectorAll('#dias-grid .dia-check:not(.dia-domingo)').forEach(div => {
+      const num = div.querySelector('.dia-check-num');
+      if (!num) return;
+      const day = parseInt(num.textContent);
+      if (isNaN(day)) return;
+      const ds  = toDateStr(new Date(year, month, day));
+      const dt  = new Date(year, month, day);
+      const semLunes  = toDateStr(semanaTarget);
+      const semSabado = toDateStr(new Date(semanaTarget.getFullYear(), semanaTarget.getMonth(), semanaTarget.getDate() + 5));
+      if (ds >= semLunes && ds <= semSabado && ds >= hoyStr) {
+        diasSeleccionados.add(ds);
+        div.classList.add('selected');
+      }
+    });
+    $('btn-sel-todo-dias').textContent = 'Deseleccionar todos';
+    $('btn-bloquear-dias').disabled = diasSeleccionados.size === 0;
+    $('dias-hint').textContent = diasSeleccionados.size + ' día(s) seleccionado(s)';
+    selTodoActivado = true;
+  });
+
+  $('bloquear-mes').addEventListener('change', () => {
+    const parts = $('bloquear-mes').value.split('-');
+    bloquearMesCursor = new Date(parseInt(parts[0]), parseInt(parts[1]), 1);
+    diasSeleccionados.clear();
+    selTodoActivado = false;
+    $('btn-sel-todo-dias').textContent = 'Seleccionar semana completa';
+    renderDiasGrid();
+  });
 
 })();
 </script>

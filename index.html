@@ -35,6 +35,10 @@
   .panel-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--white)}
   .btn-logout{background:transparent;border:1px solid rgba(245,240,232,.2);color:rgba(245,240,232,.7);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all .15s}
   .btn-logout:hover{border-color:rgba(245,240,232,.5);color:var(--cream)}
+  .plan-badge{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-right:8px}
+  .plan-basico{background:rgba(245,240,232,.1);color:rgba(245,240,232,.6);border:1px solid rgba(245,240,232,.15)}
+  .plan-estandar{background:rgba(201,150,58,.15);color:var(--gold);border:1px solid rgba(201,150,58,.3)}
+  .plan-pro{background:rgba(45,106,79,.2);color:#5aad84;border:1px solid rgba(45,106,79,.3)}
   .btn-refresh{background:transparent;border:1px solid rgba(245,240,232,.2);color:rgba(245,240,232,.7);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 10px;border-radius:20px;cursor:pointer;transition:all .15s;margin-right:6px}
   .btn-refresh:hover{border-color:rgba(201,150,58,.5);color:var(--gold)}
   .btn-refresh.spinning{animation:spin .7s linear infinite}
@@ -139,6 +143,11 @@
   .dia-check:hover:not(.dia-domingo){border-color:var(--gold)}
   .dia-check.selected{background:rgba(201,150,58,.12);border-color:var(--gold)}
   .dia-check.dia-domingo{opacity:.35;cursor:default;pointer-events:none}
+  .dia-check.dia-bloqueado{background:rgba(139,26,26,.08);border-color:rgba(139,26,26,.3);cursor:pointer}
+  .dia-check.dia-bloqueado:hover{border-color:var(--error);background:rgba(139,26,26,.14)}
+  .dia-check.dia-bloqueado .dia-check-num{color:var(--error)}
+  .dia-check.dia-bloqueado .dia-check-nom{color:rgba(139,26,26,.6)}
+  .dia-bloqueado-hint{font-size:10px;color:var(--error);margin-top:2px;line-height:1}
   .dia-check-nom{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
   .dia-check-num{font-size:15px;font-family:'Playfair Display',serif;color:var(--ink);line-height:1.3}
   .seleccion-hint{font-size:11px;color:var(--muted);margin-top:8px;text-align:center}
@@ -231,6 +240,7 @@
     </div>
     <div style="display:flex;align-items:center">
       <span class="last-update" id="last-update-label"></span>
+      <span class="plan-badge plan-estandar" id="plan-badge-label">Estándar</span>
       <button class="btn-refresh" id="btn-refresh" title="Actualizar citas">↻</button>
       <button class="btn-logout" id="btn-logout">Cerrar sesión</button>
     </div>
@@ -330,12 +340,17 @@
             <label style="display:block;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px">Mes</label>
             <select id="bloquear-mes" style="width:100%;border:1.5px solid var(--border);border-radius:var(--r);padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--white);outline:none"></select>
           </div>
-          <div style="display:flex;align-items:flex-end">
-            <button class="btn-seleccionar-todo" id="btn-sel-todo-dias">Seleccionar semana completa</button>
-          </div>
+
         </div>
         <div class="dias-grid" id="dias-grid"></div>
-        <div class="seleccion-hint" id="dias-hint">Selecciona los días a bloquear</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <div class="seleccion-hint" id="dias-hint" style="margin-top:0">Selecciona los días a bloquear</div>
+          <button class="btn-seleccionar-todo" id="btn-limpiar-dias" style="display:none">Limpiar selección</button>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--muted)">
+          <span>🟡 Seleccionado</span>
+          <span style="color:var(--error)">🔴 Ya bloqueado — toca para desbloquear</span>
+        </div>
         <button class="btn-gold-sm" id="btn-bloquear-dias" style="width:100%;margin-top:12px" disabled>Bloquear días seleccionados</button>
       </div>
     </div>
@@ -495,7 +510,7 @@
   // ══════════════════════════════════════════
   const SUPABASE_URL = 'https://hhfjivzmglxzboajhksx.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoZmppdnptZ2x4emJvYWpoa3N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzcxODMsImV4cCI6MjA4OTYxMzE4M30.SD0fpbqmHNlTt4BunX2sbotzwWCqJ70TP_Gd-4WOsnU';
-  const NEGOCIO_SLUG = 'donpepe';
+  const NEGOCIO_SLUG = 'corteflow';
 
   const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -505,6 +520,7 @@
   // ── Estado
   const st = {
     negocioId: null,
+    plan: 'estandar', // 'basico' | 'estandar' | 'pro'
     vista: 'hoy', // 'hoy' | 'semana' | 'mes'
     cursor: new Date(), // fecha de referencia para navegación
     diaSeleccionado: null, // para semana/mes al hacer clic en un día
@@ -567,9 +583,9 @@
   // ── Sesión persistente (localStorage)
   const SESSION_DURATION = 32400000; // 9 horas en ms
 
-  function guardarSesion(negocioId, nombre) {
+  function guardarSesion(negocioId, nombre, plan) {
     localStorage.setItem('panel_session_donpepe', JSON.stringify({
-      negocioId, nombre, expira: Date.now() + SESSION_DURATION
+      negocioId, nombre, plan: plan || 'estandar', expira: Date.now() + SESSION_DURATION
     }));
   }
 
@@ -590,13 +606,71 @@
     $('inp-password').value = '';
   }
 
-  function entrarAlPanel(negocioId, nombre) {
+  function entrarAlPanel(negocioId, nombre, plan) {
     st.negocioId = negocioId;
+    st.plan = plan || 'estandar';
     $('panel-negocio-nombre').textContent = nombre;
     $('screen-login').classList.add('hidden');
     $('screen-panel').classList.remove('hidden');
+    aplicarPlan(st.plan);
     iniciarAutoRefresh();
     cargarTodo();
+  }
+
+  function aplicarRestriccionEstilista() {
+    const seccion = $('edit-estilista').closest('.modal-field');
+    const titulo  = seccion ? seccion.previousElementSibling : null;
+    if (st.plan === 'basico') {
+      // Ocultar selector y título de especialista
+      if (seccion) seccion.style.display = 'none';
+      if (titulo && titulo.classList.contains('modal-section')) titulo.style.display = 'none';
+      $('edit-estilista').value = 'Rodrigo'; // único prestador en básico
+    } else {
+      if (seccion) seccion.style.display = 'block';
+      if (titulo && titulo.classList.contains('modal-section')) titulo.style.display = 'block';
+    }
+  }
+
+  function aplicarPlan(plan) {
+    // Actualizar badge
+    const badge = $('plan-badge-label');
+    const labels = { basico: 'Básico', estandar: 'Estándar', pro: 'Pro ⭐' };
+    badge.textContent = labels[plan] || 'Estándar';
+    badge.className = 'plan-badge plan-' + plan;
+
+    // Básico: ocultar bloqueo de horarios y solicitudes Diana
+    const bloquearSection = document.querySelector('.bloquear-section');
+    if (bloquearSection) bloquearSection.style.display = plan === 'basico' ? 'none' : 'block';
+
+    // Básico: ocultar banner de Diana (solo 1 prestador, no hay equipo)
+    const dianaBanner = $('diana-banner');
+    if (dianaBanner && plan === 'basico') dianaBanner.style.display = 'none';
+
+    // Básico: mostrar aviso de prestador único si no existe ya
+    const avisoExistente = $('aviso-basico');
+    if (plan === 'basico' && !avisoExistente) {
+      const aviso = document.createElement('div');
+      aviso.id = 'aviso-basico';
+      aviso.style.cssText = 'background:rgba(201,150,58,.06);border:1px solid rgba(201,150,58,.2);border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px';
+      aviso.innerHTML = '<span style="font-size:14px">👤</span><span>Plan Básico — <strong style="color:var(--ink)">1 prestador de servicio.</strong> Actualiza a Estándar para agregar más especialistas.</span>';
+      const viewTabs = document.querySelector('.view-tabs');
+      if (viewTabs) viewTabs.parentNode.insertBefore(aviso, viewTabs);
+    } else if (plan !== 'basico' && avisoExistente) {
+      avisoExistente.remove();
+    }
+
+    // Pro: mostrar badge de recordatorios activos
+    if (plan === 'pro') {
+      const existente = $('recordatorio-badge');
+      if (!existente) {
+        const badge = document.createElement('div');
+        badge.id = 'recordatorio-badge';
+        badge.style.cssText = 'background:rgba(45,106,79,.08);border:1px solid rgba(45,106,79,.2);border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#2d6a4f;display:flex;align-items:center;gap:8px';
+        badge.innerHTML = '<span style="font-size:16px">✉️</span><span><strong>Recordatorios activos</strong> — Recibirás un email cada mañana a las 8 AM con tus citas del día.</span>';
+        const main = document.querySelector('.panel-main');
+        if (main) main.insertBefore(badge, main.firstChild);
+      }
+    }
   }
 
   async function login() {
@@ -604,11 +678,11 @@
     if (!pass) return;
     $('btn-login').disabled = true; $('btn-login').textContent = 'Verificando…';
     try {
-      const rows = await sb.get('negocios', 'slug=eq.' + NEGOCIO_SLUG + '&select=id,nombre,password,activo');
+      const rows = await sb.get('negocios', 'slug=eq.' + NEGOCIO_SLUG + '&select=id,nombre,password,activo,plan');
       if (!rows.length || !rows[0].activo) { showError('Negocio no disponible.'); return; }
       if (rows[0].password !== pass) { showError('Contraseña incorrecta. Intenta de nuevo.'); return; }
-      guardarSesion(rows[0].id, rows[0].nombre);
-      entrarAlPanel(rows[0].id, rows[0].nombre);
+      guardarSesion(rows[0].id, rows[0].nombre, rows[0].plan || 'estandar');
+      entrarAlPanel(rows[0].id, rows[0].nombre, rows[0].plan || 'estandar');
     } catch(e) { showError('Error de conexión.'); }
     $('btn-login').disabled = false; $('btn-login').textContent = 'Entrar al panel';
   }
@@ -1068,7 +1142,7 @@
   let diasSeleccionados     = new Set();
   let bloquearMesCursor     = new Date();
 
-  function renderHorariosGrid() {
+  async function renderHorariosGrid() {
     const fecha = $('bloquear-fecha').value;
     const grid  = $('horarios-grid');
     grid.innerHTML = '';
@@ -1078,31 +1152,70 @@
     if (esDomingo(fecha)) { $('horarios-hint').textContent = 'Los domingos estamos cerrados'; return; }
     const slots = getSlotsParaFecha(fecha);
     if (!slots.length) { $('horarios-hint').textContent = 'Este día ya no tiene horarios disponibles'; return; }
-    $('horarios-hint').textContent = 'Selecciona los horarios a bloquear';
+
+    // Consultar bloqueos ya existentes para esta fecha
+    let yaBloquedos = new Set();
+    try {
+      if (st.negocioId) {
+        const rows = await sb.get('horarios_bloqueados',
+          'negocio_id=eq.' + st.negocioId + '&fecha=eq.' + fecha + '&select=hora');
+        rows.forEach(r => yaBloquedos.add(r.hora.slice(0,5)));
+      }
+    } catch(e) {}
+
+    $('horarios-hint').textContent = yaBloquedos.size > 0
+      ? yaBloquedos.size + ' horario(s) ya bloqueados — selecciona más para agregar'
+      : 'Selecciona los horarios a bloquear';
+
     slots.forEach(s => {
+      const yaEsta = yaBloquedos.has(s);
       const label = document.createElement('label');
-      label.className = 'horario-check';
-      label.innerHTML = '<input type="checkbox" value="' + s + '"> ' + s;
-      label.querySelector('input').addEventListener('change', e => {
-        if (e.target.checked) { horariosSeleccionados.add(s); label.classList.add('selected'); }
-        else { horariosSeleccionados.delete(s); label.classList.remove('selected'); }
-        $('btn-bloquear').disabled = horariosSeleccionados.size === 0;
-        $('horarios-hint').textContent = horariosSeleccionados.size > 0
-          ? horariosSeleccionados.size + ' horario(s) seleccionado(s)'
-          : 'Selecciona los horarios a bloquear';
-      });
+      label.className = 'horario-check' + (yaEsta ? ' selected' : '');
+      label.style.opacity = yaEsta ? '0.5' : '1';
+      label.innerHTML = '<input type="checkbox" value="' + s + '"' + (yaEsta ? ' disabled checked' : '') + '> '
+        + s + (yaEsta ? ' <span style="font-size:10px;color:var(--muted)">ya bloqueado</span>' : '');
+      if (!yaEsta) {
+        label.querySelector('input').addEventListener('change', e => {
+          if (e.target.checked) { horariosSeleccionados.add(s); label.classList.add('selected'); }
+          else { horariosSeleccionados.delete(s); label.classList.remove('selected'); }
+          $('btn-bloquear').disabled = horariosSeleccionados.size === 0;
+          const nuevos = horariosSeleccionados.size;
+          $('horarios-hint').textContent = nuevos > 0
+            ? nuevos + ' horario(s) nuevos a bloquear'
+            : (yaBloquedos.size > 0 ? yaBloquedos.size + ' horario(s) ya bloqueados' : 'Selecciona los horarios a bloquear');
+        });
+      }
       grid.appendChild(label);
     });
   }
 
-  function renderDiasGrid() {
+  async function renderDiasGrid() {
     const grid = $('dias-grid');
     while (grid.children.length > 7) grid.removeChild(grid.lastChild);
     diasSeleccionados.clear();
     $('btn-bloquear-dias').disabled = true;
+    $('btn-limpiar-dias').style.display = 'none';
     const year  = bloquearMesCursor.getFullYear();
     const month = bloquearMesCursor.getMonth();
     const hoyStr = toDateStr(new Date());
+
+    // Consultar días que ya tienen TODOS sus slots bloqueados en este mes
+    let diasConBloqueos = new Map(); // dateStr -> count de slots bloqueados
+    try {
+      if (st.negocioId) {
+        const inicioMes = year + '-' + String(month+1).padStart(2,'0') + '-01';
+        const finMes    = toDateStr(new Date(year, month+1, 0));
+        const rows = await sb.get('horarios_bloqueados',
+          'negocio_id=eq.' + st.negocioId +
+          '&fecha=gte.' + inicioMes + '&fecha=lte.' + finMes +
+          '&select=fecha,hora');
+        rows.forEach(r => {
+          const f = r.fecha;
+          diasConBloqueos.set(f, (diasConBloqueos.get(f) || 0) + 1);
+        });
+      }
+    } catch(e) {}
+
     const firstDow = (new Date(year, month, 1).getDay() || 7) - 1;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     for (let i = 0; i < firstDow; i++) {
@@ -1113,32 +1226,63 @@
       const ds  = toDateStr(dt);
       const dow = dt.getDay();
       const past = ds < hoyStr;
-      // Sábado de hoy pasado el horario (después de 14:30) → también bloqueado
       const esSabadoSinSlots = ds === hoyStr && dow === 6 && getSlotsParaFecha(ds).length === 0;
       const noDisponible = dow === 0 || past || esSabadoSinSlots;
+      const bloqueoCount = diasConBloqueos.get(ds) || 0;
+      const slotsDelDia  = dow === 6 ? ALL_SLOTS_SABADO.length : ALL_SLOTS_SEMANA.length;
+      const diaBloqueado = !noDisponible && bloqueoCount > 0;
       const div = document.createElement('div');
-      div.className = 'dia-check' + (noDisponible ? ' dia-domingo' : '');
-      div.innerHTML = '<div class="dia-check-nom">' + ['Do','Lu','Ma','Mi','Ju','Vi','Sá'][dow] + '</div><div class="dia-check-num">' + d + '</div>';
-      if (!noDisponible) {
+      let cls = 'dia-check';
+      if (noDisponible) cls += ' dia-domingo';
+      else if (diaBloqueado) cls += ' dia-bloqueado';
+      div.className = cls;
+      div.innerHTML = '<div class="dia-check-nom">' + ['Do','Lu','Ma','Mi','Ju','Vi','Sá'][dow] + '</div>' +
+        '<div class="dia-check-num">' + d + '</div>' +
+        (diaBloqueado ? '<div class="dia-bloqueado-hint">' + bloqueoCount + '/' + slotsDelDia + '</div>' : '');
+
+      if (!noDisponible && !diaBloqueado) {
+        // Día normal — seleccionar para bloquear
         div.addEventListener('click', () => {
           if (diasSeleccionados.has(ds)) { diasSeleccionados.delete(ds); div.classList.remove('selected'); }
           else { diasSeleccionados.add(ds); div.classList.add('selected'); }
-          selTodoActivado = false;
-          $('btn-sel-todo-dias').textContent = 'Seleccionar semana completa';
           $('btn-bloquear-dias').disabled = diasSeleccionados.size === 0;
+          $('btn-limpiar-dias').style.display = diasSeleccionados.size > 0 ? 'inline' : 'none';
           $('dias-hint').textContent = diasSeleccionados.size > 0
             ? diasSeleccionados.size + ' día(s) seleccionado(s)'
             : 'Selecciona los días a bloquear';
         });
+      } else if (diaBloqueado) {
+        // Día con bloqueos — clic para desbloquear
+        div.title = 'Toca para desbloquear este día';
+        div.addEventListener('click', () => desbloquearDia(ds, div));
       }
       grid.appendChild(div);
+    }
+  }
+
+  async function desbloquearDia(fecha, divEl) {
+    if (!confirm('¿Desbloquear todos los horarios del ' + fmtDate(fecha) + '?')) return;
+    divEl.style.opacity = '0.5';
+    try {
+      // Necesitamos policy de DELETE — usar DELETE directo en Supabase REST
+      const r = await fetch(SUPABASE_URL + '/rest/v1/horarios_bloqueados' +
+        '?negocio_id=eq.' + st.negocioId + '&fecha=eq.' + fecha, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+      });
+      if (!r.ok) throw new Error('Error ' + r.status);
+      showToast('Horarios del ' + fmtDate(fecha) + ' desbloqueados ✓');
+      await renderDiasGrid();
+    } catch(e) {
+      showToast('Error al desbloquear: ' + e.message, true);
+      divEl.style.opacity = '1';
     }
   }
 
   function poblarSelectMes() {
     const sel = $('bloquear-mes'); sel.innerHTML = '';
     const hoy = new Date();
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 12; i++) {
       const d = new Date(hoy.getFullYear(), hoy.getMonth() + i, 1);
       const opt = document.createElement('option');
       opt.value = d.getFullYear() + '-' + d.getMonth();
@@ -1153,7 +1297,12 @@
     const btn = $('btn-bloquear'); btn.disabled = true; btn.textContent = 'Bloqueando…';
     try {
       for (const hora of horariosSeleccionados) {
-        await sb.post('horarios_bloqueados', { negocio_id: st.negocioId, fecha, hora: hora + ':00', motivo: 'Horario bloqueado' });
+        // Verificar si ya existe antes de insertar para evitar duplicados
+        const existe = await sb.get('horarios_bloqueados',
+          'negocio_id=eq.' + st.negocioId + '&fecha=eq.' + fecha + '&hora=eq.' + hora + ':00&select=id');
+        if (!existe.length) {
+          await sb.post('horarios_bloqueados', { negocio_id: st.negocioId, fecha, hora: hora + ':00', motivo: 'Horario bloqueado' });
+        }
       }
       showToast(horariosSeleccionados.size + ' horario(s) bloqueado(s) ✓');
       $('bloquear-fecha').value = '';
@@ -1175,6 +1324,8 @@
       }
       showToast(diasSeleccionados.size + ' día(s) bloqueado(s) ✓');
       diasSeleccionados.clear();
+      $('btn-limpiar-dias').style.display = 'none';
+      $('dias-hint').textContent = 'Selecciona los días a bloquear';
       renderDiasGrid();
     } catch(e) { showToast('Error al bloquear: ' + (e.message || e), true); console.error('Bloquear días error:', e); }
     btn.disabled = true; btn.textContent = 'Bloquear días seleccionados';
@@ -1252,7 +1403,9 @@
     editCitaOriginalHora     = null;
     $('edit-modal-title').textContent = 'Nueva cita';
     $('edit-modal-sub').textContent   = 'Registrar cita manualmente';
-    $('edit-estilista').value    = 'Rodrigo';
+    // Plan básico: un solo prestador, ocultar selector
+    aplicarRestriccionEstilista();
+    $('edit-estilista').value    = st.plan === 'basico' ? 'Rodrigo' : 'Rodrigo';
     actualizarServiciosPorEstilista(true);
     $('edit-estilo-tinte').value = '';
     $('edit-tinte-wrap').style.display = 'none';
@@ -1278,7 +1431,8 @@
     $('edit-modal-title').textContent = 'Editar cita';
     $('edit-modal-sub').textContent   = c.nombre_cliente + ' · ' + (c.fecha || '—') + ' ' + (c.hora ? c.hora.slice(0,5) : '');
 
-    // 1. Especialista primero
+    // 1. Especialista primero — restringir si plan básico
+    aplicarRestriccionEstilista();
     $('edit-estilista').value = c.estilista || 'Rodrigo';
 
     // 2. Servicio — poblar lista según especialista y mantener valor actual
@@ -1323,8 +1477,9 @@
       return;
     }
 
-    // Traer citas ocupadas para ese especialista en esa fecha
+    // Traer citas ocupadas para ese especialista + horarios bloqueados
     let ocupados = [];
+    let bloqueados = new Set();
     try {
       if (st.negocioId) {
         const rows = await sb.get('citas',
@@ -1336,14 +1491,22 @@
         ocupados = rows
           .filter(r => r.id !== citaIdExcluir)
           .map(r => r.hora.slice(0,5));
+        // Horarios bloqueados por el barbero
+        const bloqueos = await sb.get('horarios_bloqueados',
+          'negocio_id=eq.' + st.negocioId +
+          '&fecha=eq.' + fecha +
+          '&select=hora');
+        bloqueos.forEach(r => bloqueados.add(r.hora.slice(0,5)));
       }
     } catch(e) {}
 
     slots.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s;
-      opt.textContent = ocupados.includes(s) ? s + ' — ocupado' : s;
-      opt.disabled = ocupados.includes(s);
+      const esBloqueado = bloqueados.has(s);
+      const esOcupado   = ocupados.includes(s);
+      opt.textContent = esBloqueado ? s + ' — bloqueado' : esOcupado ? s + ' — ocupado' : s;
+      opt.disabled = esBloqueado || esOcupado;
       select.appendChild(opt);
     });
 
@@ -1504,7 +1667,7 @@
   // Sesión guardada
   const sesionGuardada = cargarSesion();
   if (sesionGuardada) {
-    entrarAlPanel(sesionGuardada.negocioId, sesionGuardada.nombre);
+    entrarAlPanel(sesionGuardada.negocioId, sesionGuardada.nombre, sesionGuardada.plan || 'estandar');
   }
 
   // ── Bloquear tabs
@@ -1530,70 +1693,35 @@
   inputFecha.value = hoyStr;
   inputFecha.addEventListener('change', () => {
     horariosSeleccionados.clear();
-    renderHorariosGrid();
+    renderHorariosGrid(); // async — muestra bloqueos existentes
   });
   renderHorariosGrid();
 
   $('btn-bloquear').addEventListener('click', bloquearHorario);
 
   $('btn-sel-todo-horarios').addEventListener('click', () => {
-    document.querySelectorAll('#horarios-grid input[type=checkbox]').forEach(cb => {
+    document.querySelectorAll('#horarios-grid input[type=checkbox]:not(:disabled)').forEach(cb => {
       cb.checked = true;
       cb.closest('label').classList.add('selected');
       horariosSeleccionados.add(cb.value);
     });
     $('btn-bloquear').disabled = horariosSeleccionados.size === 0;
-    $('horarios-hint').textContent = horariosSeleccionados.size + ' horario(s) seleccionado(s)';
+    $('horarios-hint').textContent = horariosSeleccionados.size > 0
+      ? horariosSeleccionados.size + ' horario(s) nuevos a bloquear'
+      : 'Todos los horarios ya están bloqueados';
   });
 
   // ── Bloquear por días
   $('btn-bloquear-dias').addEventListener('click', bloquearDias);
 
-  let selTodoActivado = false;
-  $('btn-sel-todo-dias').addEventListener('click', () => {
-    if (selTodoActivado) {
-      // Deseleccionar todos
-      diasSeleccionados.clear();
-      document.querySelectorAll('#dias-grid .dia-check').forEach(d => d.classList.remove('selected'));
-      $('btn-sel-todo-dias').textContent = 'Seleccionar semana completa';
-      $('btn-bloquear-dias').disabled = true;
-      $('dias-hint').textContent = 'Selecciona los días a bloquear';
-      selTodoActivado = false;
-      return;
-    }
-    // Seleccionar solo la semana actual (lunes a sábado) dentro del mes visible
-    // Buscar la semana que contiene hoy, o la primera semana futura del mes
-    const year  = bloquearMesCursor.getFullYear();
-    const month = bloquearMesCursor.getMonth();
-    const hoyDate = new Date(); hoyDate.setHours(0,0,0,0);
-    // Obtener el lunes de la semana actual o siguiente disponible en el mes
-    const lunes = new Date(hoyDate);
-    const dowHoy = hoyDate.getDay() || 7;
-    lunes.setDate(hoyDate.getDate() - dowHoy + 1); // lunes de esta semana
-    // Si el lunes ya pasó completamente, ir a la próxima semana
-    const sabadoSemana = new Date(lunes); sabadoSemana.setDate(lunes.getDate() + 5);
-    const semanaTarget = sabadoSemana < hoyDate
-      ? new Date(lunes.setDate(lunes.getDate() + 7)) && lunes
-      : lunes;
+  let selTodoActivado = false; // reservado para uso futuro
 
-    document.querySelectorAll('#dias-grid .dia-check:not(.dia-domingo)').forEach(div => {
-      const num = div.querySelector('.dia-check-num');
-      if (!num) return;
-      const day = parseInt(num.textContent);
-      if (isNaN(day)) return;
-      const ds  = toDateStr(new Date(year, month, day));
-      const dt  = new Date(year, month, day);
-      const semLunes  = toDateStr(semanaTarget);
-      const semSabado = toDateStr(new Date(semanaTarget.getFullYear(), semanaTarget.getMonth(), semanaTarget.getDate() + 5));
-      if (ds >= semLunes && ds <= semSabado && ds >= hoyStr) {
-        diasSeleccionados.add(ds);
-        div.classList.add('selected');
-      }
-    });
-    $('btn-sel-todo-dias').textContent = 'Deseleccionar todos';
-    $('btn-bloquear-dias').disabled = diasSeleccionados.size === 0;
-    $('dias-hint').textContent = diasSeleccionados.size + ' día(s) seleccionado(s)';
-    selTodoActivado = true;
+  $('btn-limpiar-dias').addEventListener('click', () => {
+    diasSeleccionados.clear();
+    document.querySelectorAll('#dias-grid .dia-check').forEach(d => d.classList.remove('selected'));
+    $('btn-bloquear-dias').disabled = true;
+    $('btn-limpiar-dias').style.display = 'none';
+    $('dias-hint').textContent = 'Selecciona los días a bloquear';
   });
 
   $('bloquear-mes').addEventListener('change', () => {
@@ -1601,7 +1729,8 @@
     bloquearMesCursor = new Date(parseInt(parts[0]), parseInt(parts[1]), 1);
     diasSeleccionados.clear();
     selTodoActivado = false;
-    $('btn-sel-todo-dias').textContent = 'Seleccionar semana completa';
+    $('btn-limpiar-dias').style.display = 'none';
+    $('dias-hint').textContent = 'Selecciona los días a bloquear';
     renderDiasGrid();
   });
 
